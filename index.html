@@ -46,6 +46,82 @@
       font-size: 0.9rem;
       margin-top: 0.5rem;
     }
+    /* Button styles for Live Traffic Optimization */
+    .live-traffic-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .top-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .top-buttons button {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s ease;
+    }
+    .top-buttons button:hover {
+      background-color: #45a049;
+    }
+    /* Chatbot button styles */
+    #sewakBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #4caf50;
+      color: white;
+      font-size: 24px;
+      border-radius: 50%;
+      padding: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    /* Chatbot popup styles */
+    #chatbotPopup {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background-color: #fff;
+      color: black;
+      width: 300px;
+      height: 350px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 15px;
+      display: none;
+    }
+    .chat-message {
+      margin: 10px 0;
+    }
+    .chat-options button {
+      margin: 5px;
+      padding: 10px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .chat-options button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -57,19 +133,19 @@
   <div class="dashboard">
     <div class="card">
       <div class="title">🚦 Traffic Flow</div>
-      <div class="value" id="traffic">Loading...</div>
+      <div class="value" id="traffic">0%</div>
       <div class="status" id="trafficStatus"></div>
     </div>
 
     <div class="card">
       <div class="title">🗑️ Waste Bin Fill Level</div>
-      <div class="value" id="waste">Loading...</div>
+      <div class="value" id="waste">0%</div>
       <div class="status" id="wasteStatus"></div>
     </div>
 
     <div class="card">
       <div class="title">☀️ Solar Power Generated</div>
-      <div class="value" id="energy">Loading...</div>
+      <div class="value" id="energy">0%</div>
       <div class="status">Last 24 hours</div>
     </div>
 
@@ -81,32 +157,106 @@
 
     <div class="card">
       <div class="title">📡 IoT Sensors Active</div>
-      <div class="value" id="iotSensors">Loading...</div>
+      <div class="value" id="iotSensors">0%</div>
       <div class="status">Monitoring Infrastructure</div>
+    </div>
+
+    <div class="card">
+      <div class="title">🌦️ Current Weather</div>
+      <div class="value" id="weatherTemp">Loading...</div>
+      <div class="status" id="weatherCondition">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Live Traffic Optimization Button -->
+  <div class="top-buttons">
+    <button onclick="window.location.href='live-traffic.html';">Live Traffic Optimization</button>
+    <button onclick="window.location.href='Plantation.html';">Plantation</button>
+    <button onclick="window.location.href='exan.html';">City Map</button>
+    <button onclick="window.location.href='projects.html';">City Projects</button>
+  </div>
+
+  <!-- Chatbot Button (Sewak) -->
+  <div id="sewakBtn">
+    🤖
+  </div>
+
+  <!-- Chatbot Popup -->
+  <div id="chatbotPopup">
+    <div class="chat-message">
+      Sewak: How may I help you?
+    </div>
+    <div class="chat-options">
+      <button onclick="showNearby('hotels')">Look nearby hotels</button>
+      <button onclick="showNearby('hospitals')">Look nearby hospitals</button>
+      <button onclick="showNearby('police')">Look nearby police stations</button>
     </div>
   </div>
 
   <script>
-    function updateDashboard() {
-      const traffic = Math.floor(Math.random() * 100);
-      const waste = Math.floor(Math.random() * 100);
-      const energy = (Math.random() * 50 + 50).toFixed(2); // 50–100 kWh
-      const sensors = Math.floor(Math.random() * 1000 + 500); // 500–1500
+    // Chatbot toggle
+    const sewakBtn = document.getElementById("sewakBtn");
+    const chatbotPopup = document.getElementById("chatbotPopup");
 
-      document.getElementById('traffic').textContent = traffic + '%';
-      document.getElementById('waste').textContent = waste + '%';
-      document.getElementById('energy').textContent = energy + ' kWh';
-      document.getElementById('iotSensors').textContent = sensors;
-
-      document.getElementById('trafficStatus').textContent =
-        traffic > 70 ? '⚠️ Heavy traffic – optimizing signals' : '✅ Smooth traffic flow';
-
-      document.getElementById('wasteStatus').textContent =
-        waste > 80 ? '⚠️ Bin needs pickup' : '🟢 Optimal level';
+    sewakBtn.onclick = () => {
+      // Toggle visibility of the chatbot
+      chatbotPopup.style.display = chatbotPopup.style.display === "block" ? "none" : "block";
+    };
+    
+    function showNearby(type) {
+      switch(type) {
+        case 'hotels':
+          window.location.href = 'added1.html'; // Redirect to the hotels page
+          break;
+        case 'hospitals':
+          window.location.href = 'added2.html'; // Redirect to the hospitals page (or adjust as needed)
+          break;
+        case 'police':
+          window.location.href = 'added3.html'; // Redirect to the police stations page (or adjust as needed)
+          break;
+      }
+      alert(message); // Display message in an alert for now
+      chatbotPopup.style.display = "none"; // Close the chatbot after selection
     }
 
-    updateDashboard();
-    setInterval(updateDashboard, 5000); // Refresh every 5 seconds
+    // Weather data fetch function
+    async function getWeatherData() {
+      const apiKey = "3f18a2a0df29600f5ffd54fd07ca934c"; // OpenWeather API key
+      const city = "Aligarh"; // City name
+      try {
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
+        const data = await response.json();
+
+        if (data.cod !== 200) {
+          document.getElementById('weatherTemp').textContent = "Error: " + data.message;
+          document.getElementById('weatherCondition').textContent = "";
+        } else {
+          const temp = data.main.temp;
+          const condition = data.weather[0].description;
+
+          document.getElementById('weatherTemp').textContent = `${temp}°C`;
+          document.getElementById('weatherCondition').textContent = condition.charAt(0).toUpperCase() + condition.slice(1);
+        }
+      } catch (error) {
+        document.getElementById('weatherTemp').textContent = "Error fetching weather data";
+        document.getElementById('weatherCondition').textContent = "";
+      }
+    }
+
+    // Simulating the percentage function
+    function updateStatus() {
+      // Random values for demonstration
+      document.getElementById('traffic').textContent = `${Math.floor(Math.random() * 101)}%`;
+      document.getElementById('waste').textContent = `${Math.floor(Math.random() * 101)}%`;
+      document.getElementById('energy').textContent = `${Math.floor(Math.random() * 101)}%`;
+      document.getElementById('iotSensors').textContent = `${Math.floor(Math.random() * 101)}%`;
+
+      setTimeout(updateStatus, 5000); // Update every 5 seconds
+    }
+
+    // Initializing dashboard and weather
+    getWeatherData();
+    updateStatus();
   </script>
 
 </body>
