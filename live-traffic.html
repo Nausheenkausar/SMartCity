@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Live Traffic Map - Aligarh</title>
+    <style>
+      #map {
+        height: 90vh;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      h2 {
+        text-align: center;
+        margin-top: 10px;
+      }
+      #input-area {
+        text-align: center;
+        margin: 10px;
+      }
+      input {
+        padding: 8px;
+        width: 250px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #96b49a;
+      }
+      button {
+        padding: 8px 12px;
+        font-size: 16px;
+        border: none;
+        background-color: #4caf50;
+        color: rgb(145, 179, 140);
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #message {
+        text-align: center;
+        font-size: 18px;
+        margin: 15px auto;
+        font-weight: bold;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Live Traffic in Aligarh</h2>
+
+    <div id="input-area">
+      <input type="text" id="locationInput" placeholder="Enter area name e.g., Center Point">
+      <button onclick="addTrafficMarker()">Show Traffic</button>
+    </div>
+
+    <div id="message"></div>
+
+    <div id="map"></div>
+
+    <script>
+      let map;
+
+      const manualTrafficData = {
+        "Center Point": { lat: 27.8978, lng: 78.0811, level: "heavy" },
+        "Railway Station": { lat: 27.8979, lng: 78.0990, level: "moderate" },
+        "AMU": { lat: 27.9181, lng: 78.0787, level: "light" },
+        "Quarasi": { lat: 27.9030, lng: 78.0615, level: "moderate" },
+        "Ramghat Road": { lat: 27.8837, lng: 78.0870, level: "heavy" },
+        "Dhaurra Mafi": { lat: 27.9210, lng: 78.0600, level: "moderate" },
+        "Maulana Azad": { lat: 27.9200, lng: 78.0730, level: "light" },
+        "Chungi": { lat: 27.9150, lng: 78.0900, level: "heavy" },
+        "Shamshad": { lat: 27.9100, lng: 78.0880, level: "moderate" },
+        "Kela Nagar": { lat: 27.9000, lng: 78.0930, level: "light" },
+        "Shah Jamal": { lat: 27.8920, lng: 78.0850, level: "moderate" },
+        "Abad Nagar": { lat: 27.8890, lng: 78.0800, level: "light" },
+        "Diggi Road": { lat: 27.8870, lng: 78.0760, level: "moderate" },
+        "Jail Road": { lat: 27.8850, lng: 78.0710, level: "heavy" },
+        "Jawahar Park": { lat: 27.8830, lng: 78.0660, level: "light" },
+        "Dhodhpur": { lat: 27.8950, lng: 78.0690, level: "moderate" },
+        "Amir Nisha": { lat: 27.8970, lng: 78.0650, level: "light" },
+        "Medical Road": { lat: 27.8990, lng: 78.0630, level: "heavy" },
+        "Trikona Park": { lat: 27.9020, lng: 78.0610, level: "moderate" },
+        "University Circle": { lat: 27.9060, lng: 78.0590, level: "light" },
+        "Marris Road": { lat: 27.9110, lng: 78.0570, level: "moderate" }
+      };
+
+      function getColorIcon(level) {
+        if (level === "heavy") return "http://maps.google.com/mapfiles/ms/icons/red-dot.png";
+        if (level === "moderate") return "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
+        return "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
+      }
+
+      function showMessage(level) {
+        const messageBox = document.getElementById("message");
+        if (level === "heavy") {
+          messageBox.innerText = "Traffic is heavy. Suggestion: Use two-wheeler.";
+          messageBox.style.color = "red";
+        } else if (level === "moderate") {
+          messageBox.innerText = "Traffic is moderate. Suggestion: Use e-vehicle.";
+          messageBox.style.color = "orange";
+        } else {
+          messageBox.innerText = "Traffic is low. Suggestion: Carpool and save fuel. Avoid speeding.";
+          messageBox.style.color = "green";
+        }
+      }
+
+      function initMap() {
+        const center = { lat: 27.8974, lng: 78.0880 }; // Aligarh
+
+        map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 13,
+          center: center,
+        });
+
+        const trafficLayer = new google.maps.TrafficLayer();
+        trafficLayer.setMap(map);
+      }
+
+      function addTrafficMarker() {
+        const input = document.getElementById("locationInput").value.trim();
+        const data = manualTrafficData[input];
+
+        if (data) {
+          new google.maps.Marker({
+            position: { lat: data.lat, lng: data.lng },
+            map: map,
+            icon: getColorIcon(data.level),
+            title: `${input} - Traffic: ${data.level}`,
+          });
+          map.panTo({ lat: data.lat, lng: data.lng });
+          showMessage(data.level);
+        } else {
+          document.getElementById("message").innerText = "Location not found. Try valid Aligarh areas.";
+          document.getElementById("message").style.color = "#000";
+        }
+      }
+    </script>
+
+    <script async
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA056FXdH4h0ICqhBylpefto-KHOGMmhlQ&callback=initMap">
+    </script>
+  </body>
+</html>
+
