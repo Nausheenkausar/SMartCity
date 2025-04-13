@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AMU Non-Native Plants Monitoring</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #2c3e50, #3498db);
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 1.5rem;
+      background-color: rgba(0, 0, 0, 0.4);
+      position: relative;
+      z-index: 1000;
+    }
+    .header-title {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .header-subtitle {
+      font-size: 1.2rem;
+      color: #ffecb3;
+    }
+    .back-link {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      color: white;
+      text-decoration: none;
+      font-size: 1.1rem;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+    }
+    .back-link:hover {
+      background-color: rgba(0, 0, 0, 0.5);
+      transform: translateX(-5px);
+    }
+    .section {
+      background-color: rgba(255, 255, 255, 0.1);
+      margin: 2rem;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: #ffecb3;
+      text-align: center;
+    }
+    .plant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+    }
+    .plant-card {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .plant-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+    .plant-model-container {
+      width: 100%;
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+    }
+    .plant-model-container svg {
+      width: 100%;
+      height: 100%;
+    }
+    .plant-svg {
+      transition: transform 0.5s ease;
+    }
+    .plant-model-container:hover .plant-svg {
+      transform: scale(1.1);
+    }
+    .plant-model-container:hover .leaves {
+      animation: sway 2s infinite alternate ease-in-out;
+    }
+    @keyframes sway {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
+    }
+    .plant-info {
+      padding: 1.5rem;
+    }
+    .plant-name {
+      font-size: 1.4rem;
+      color: #ffecb3;
+      margin-bottom: 0.5rem;
+    }
+    .plant-scientific {
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 1rem;
+    }
+    .plant-health-monitor {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .health-title {
+      font-weight: bold;
+      color: #ffecb3;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .health-status {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .status-excellent { background-color: #4CAF50; }
+    .status-good { background-color: #8BC34A; }
+    .status-fair { background-color: #FFC107; }
+    .status-concern { background-color: #FF9800; }
+    .status-critical { background-color: #F44336; }
+    .health-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .metric-item {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 0.5rem;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-top: 0.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .metric-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .irrigation-control {
+      margin-top: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .irrigation-button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 0.9rem;
+    }
+    .irrigation-button:hover {
+      background-color: #0b7dda;
+    }
+    .irrigation-button.active {
+      background-color: #0d47a1;
+    }
+    .irrigation-button.disabled {
+      background-color: #7f8c8d;
+      cursor: not-allowed;
+    }
+    .weather-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .weather-card {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 1rem;
+      border-radius: 10px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .stat-card {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 1.5rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+    }
+    .map-controls {
+      margin: 1rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .map-control-btn {
+      background-color: rgba(0, 0, 0, 0.3);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .map-control-btn:hover {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    .map-control-btn.active {
+      background-color: #0d47a1;
+    }
+    #plant-map {
+      width: 100%;
+      height: 400px;
+      border-radius: 10px;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background-color: rgba(0, 0, 0, 0.4);
+      margin-top: 2rem;
+    }
+    footer a {
+      color: #ffecb3;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 768px) {
+      .plant-grid, .section {
+        padding: 1rem;
+        margin: 1rem;
+      }
+      .plant-grid {
+        grid-template-columns: 1fr;
+      }
+      #plant-map {
+        height: 300px;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="khbrkya.html" class="back-link">← Back to Dashboard</a>
+    <div class="header-title">🌿 AMU Non-Native Plants Monitoring</div>
+    <div class="header-subtitle">Digital Twin Plant Health System</div>
+  </header>
+
+  <div class="section">
+    <div class="section-title">Smart Plant Monitoring</div>
+    <p>Aligarh Muslim University's non-native plant collection is now part of our smart city initiative. Each plant is monitored with IoT sensors that track soil moisture, health metrics, and environmental conditions in real-time.</p>
+    <p>The system helps maintain optimal growing conditions while conserving water through smart irrigation.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📊 Plant Health Overview</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">87%</div>
+        <div>Average Health Score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3</div>
+        <div>Plants Requiring Attention</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">46%</div>
+        <div>Average Soil Moisture</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">2,830 L</div>
+        <div>Weekly Water Usage</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🌤 Local Weather Impact</div>
+    <div class="weather-info" id="weather-container">
+      <div class="weather-card">
+        <div>Loading...</div>
+        <div>⏳</div>
+        <div>--°C</div>
+        <div>Fetching data...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="plant-grid">
+    <div class="plant-card" id="african-tulip">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 40">
+            <ellipse cx="50" cy="40" rx="25" ry="30" fill="#4CAF50" />
+            <ellipse cx="50" cy="25" rx="10" ry="15" fill="#FF5722" />
+            <ellipse cx="35" cy="30" rx="8" ry="10" fill="#FF5722" />
+            <ellipse cx="65" cy="30" rx="8" ry="10" fill="#FF5722" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">African Tulip Tree</h3>
+        <div class="plant-scientific">Spathodea campanulata</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-excellent">Excellent</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                58% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                96% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                7.2 cm/month <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                High <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: 3 days ago</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="silver-oak">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#A9A9A9" />
+          <g class="leaves" transform-origin="50 40">
+            <path d="M50,10 L25,50 L75,50 Z" fill="#B0C4DE" />
+            <path d="M50,20 L20,60 L80,60 Z" fill="#B0C4DE" />
+            <path d="M50,30 L15,70 L85,70 Z" fill="#B0C4DE" />
+            <ellipse cx="50" cy="50" rx="5" ry="5" fill="#FFD700" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Silver Oak</h3>
+        <div class="plant-scientific">Grevillea robusta</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-good">Good</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                43% <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                84% <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                5.1 cm/month <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                Medium <span class="metric-indicator" style="background-color: #FFC107;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: Today</div>
+            <button class="irrigation-button disabled">Irrigation Active</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="eucalyptus">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 30">
+            <ellipse cx="50" cy="30" rx="15" ry="30" fill="#90EE90" />
+            <ellipse cx="40" cy="35" rx="10" ry="20" fill="#90EE90" />
+            <ellipse cx="60" cy="35" rx="10" ry="20" fill="#90EE90" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Eucalyptus</h3>
+        <div class="plant-scientific">Eucalyptus globulus</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-fair">Fair</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                28% <span class="metric-indicator" style="background-color: #FF9800;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                76% <span class="metric-indicator" style="background-color: #FFC107;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                4.3 cm/month <span class="metric-indicator" style="background-color: #FFC107;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                Medium <span class="metric-indicator" style="background-color: #FFC107;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: 7 days ago</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="bottle-palm">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <path d="M45,100 Q40,80 45,70 Q50,60 55,70 Q60,80 55,100 Z" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 40">
+            <path d="M30,40 L50,10 L70,40" stroke="#228B22" stroke-width="2" fill="none" />
+            <path d="M25,45 L50,15 L75,45" stroke="#228B22" stroke-width="2" fill="none" />
+            <path d="M20,50 L50,20 L80,50" stroke="#228B22" stroke-width="2" fill="none" />
+            <path d="M30,40 L50,70 L70,40" stroke="#228B22" stroke-width="2" fill="none" />
+            <path d="M25,45 L50,75 L75,45" stroke="#228B22" stroke-width="2" fill="none" />
+            <path d="M20,50 L50,80 L80,50" stroke="#228B22" stroke-width="2" fill="none" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Bottle Palm</h3>
+        <div class="plant-scientific">Hyophorbe lagenicaulis</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-good">Good</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                52% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                88% <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                3.5 cm/month <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                High <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: 2 days ago</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="gulmohar">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 40">
+            <ellipse cx="50" cy="40" rx="30" ry="25" fill="#4CAF50" />
+            <ellipse cx="40" cy="35" rx="5" ry="5" fill="#FF0000" />
+            <ellipse cx="60" cy="35" rx="5" ry="5" fill="#FF0000" />
+            <ellipse cx="50" cy="25" rx="5" ry="5" fill="#FF0000" />
+            <ellipse cx="30" cy="45" rx="5" ry="5" fill="#FF0000" />
+            <ellipse cx="70" cy="45" rx="5" ry="5" fill="#FF0000" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Gulmohar</h3>
+        <div class="plant-scientific">Delonix regia</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-concern">Needs Attention</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                22% <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                61% <span class="metric-indicator" style="background-color: #FF9800;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                2.8 cm/month <span class="metric-indicator" style="background-color: #FF9800;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                Low <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: 12 days ago</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="australian-pine">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 30">
+            <path d="M50,10 L40,30 L60,30 Z" fill="#006400" />
+            <path d="M50,20 L35,40 L65,40 Z" fill="#006400" />
+            <path d="M50,30 L30,50 L70,50 Z" fill="#006400" />
+            <path d="M50,40 L25,60 L75,60 Z" fill="#006400" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Australian Pine</h3>
+        <div class="plant-scientific">Casuarina equisetifolia</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-critical">Critical</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                18% <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                45% <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                1.2 cm/month <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                Very Low <span class="metric-indicator" style="background-color: #F44336;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Emergency treatment scheduled</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="japanese-cherry">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="60" width="10" height="40" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 40">
+            <ellipse cx="50" cy="40" rx="25" ry="20" fill="#4CAF50" />
+            <ellipse cx="40" cy="35" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="60" cy="35" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="45" cy="25" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="55" cy="25" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="35" cy="45" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="65" cy="45" rx="4" ry="4" fill="#FFC0CB" />
+            <ellipse cx="50" cy="50" rx="4" ry="4" fill="#FFC0CB" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Japanese Cherry</h3>
+        <div class="plant-scientific">Prunus serrulata</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-good">Good</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                48% <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                89% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                4.7 cm/month <span class="metric-indicator" style="background-color: #8BC34A;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                Medium <span class="metric-indicator" style="background-color: #FFC107;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: 4 days ago</div>
+            <button class="irrigation-button">Activate Irrigation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plant-card" id="chinese-fan-palm">
+      <div class="plant-model-container">
+        <svg viewBox="0 0 100 100" class="plant-svg">
+          <rect x="45" y="50" width="10" height="50" fill="#8B4513" />
+          <g class="leaves" transform-origin="50 30">
+            <path d="M50,30 L20,50 L80,50 Z" fill="#228B22" />
+            <path d="M50,25 L25,45 L75,45 Z" fill="#228B22" />
+            <path d="M50,20 L30,40 L70,40 Z" fill="#228B22" />
+            <path d="M50,15 L35,35 L65,35 Z" fill="#228B22" />
+            <path d="M50,10 L40,30 L60,30 Z" fill="#228B22" />
+          </g>
+        </svg>
+      </div>
+      <div class="plant-info">
+        <h3 class="plant-name">Chinese Fan Palm</h3>
+        <div class="plant-scientific">Livistona chinensis</div>
+        <div class="plant-health-monitor">
+          <div class="health-title">
+            Health Status
+            <span class="health-status status-excellent">Excellent</span>
+          </div>
+          <div class="health-metrics">
+            <div class="metric-item">
+              Soil Moisture
+              <div class="metric-value">
+                56% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Leaf Condition
+              <div class="metric-value">
+                98% <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Growth Rate
+              <div class="metric-value">
+                6.8 cm/month <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+            <div class="metric-item">
+              Nutrient Levels
+              <div class="metric-value">
+                High <span class="metric-indicator" style="background-color: #4CAF50;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="irrigation-control">
+            <div class="irrigation-status">Last watered: Today</div>
+            <button class="irrigation-button disabled">Irrigation Active</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🗺 Plant Health Monitoring Map</div>
+    <div class="map-controls">
+      <button class="map-control-btn active">Health Status</button>
+      <button class="map-control-btn">Soil Moisture</button>
+      <button class="map-control-btn">Irrigation Status</button>
+    </div>
+    <div id="plant-map"></div>
+  </div>
+
+  <footer>
+    <p>Part of the AMU Smart City Initiative | &copy; 2025 Digital Plant Monitoring System</p>
+    <p><a href="khbrkya.html">Return to Dashboard</a></p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script>
+    // Plant data with locations and health stats
+    const plantModels = [
+      {
+        id: 'african-tulip',
+        name: 'African Tulip Tree',
+        scientific: 'Spathodea campanulata',
+        location: [27.9120, 78.0780],
+        health: 'excellent',
+        moisture: 58,
+        lastWatered: '3 days ago',
+        needsAttention: false
+      },
+      {
+        id: 'silver-oak',
+        name: 'Silver Oak',
+        scientific: 'Grevillea robusta',
+        location: [27.9115, 78.0785],
+        health: 'good',
+        moisture: 43,
+        lastWatered: 'Today',
+        needsAttention: false
+      },
+      {
+        id: 'eucalyptus',
+        name: 'Eucalyptus',
+        scientific: 'Eucalyptus globulus',
+        location: [27.9125, 78.0770],
+        health: 'fair',
+        moisture: 28,
+        lastWatered: '7 days ago',
+        needsAttention: true
+      },
+      {
+        id: 'bottle-palm',
+        name: 'Bottle Palm',
+        scientific: 'Hyophorbe lagenicaulis',
+        location: [27.9118, 78.0775],
+        health: 'good',
+        moisture: 52,
+        lastWatered: '2 days ago',
+        needsAttention: false
+      },
+      {
+        id: 'gulmohar',
+        name: 'Gulmohar',
+        scientific: 'Delonix regia',
+        location: [27.9122, 78.0778],
+        health: 'concern',
+        moisture: 22,
+        lastWatered: '12 days ago',
+        needsAttention: true
+      },
+      {
+        id: 'australian-pine',
+        name: 'Australian Pine',
+        scientific: 'Casuarina equisetifolia',
+        location: [27.9110, 78.0765],
+        health: 'critical',
+        lastWatered: 'Emergency treatment',
+        needsAttention: true
+      },
+      {
+        id: 'japanese-cherry',
+        name: 'Japanese Cherry',
+        scientific: 'Prunus serrulata',
+        location: [27.9128, 78.0773],
+        health: 'good',
+        moisture: 48,
+        lastWatered: '4 days ago',
+        needsAttention: false
+      },
+      {
+        id: 'chinese-fan-palm',
+        name: 'Chinese Fan Palm',
+        scientific: 'Livistona chinensis',
+        location: [27.9115, 78.0768],
+        health: 'excellent',
+        moisture: 56,
+        lastWatered: 'Today',
+        needsAttention: false
+      }
+    ];
+
+    // Initialize UI and map when page loads
+    window.addEventListener('load', function() {
+      // Setup irrigation buttons
+      const irrigationButtons = document.querySelectorAll('.irrigation-button');
+      irrigationButtons.forEach(button => {
+        if (!button.classList.contains('disabled')) {
+          button.addEventListener('click', function() {
+            button.classList.add('active');
+            button.textContent = 'Irrigation Activated';
+            const statusElement = button.previousElementSibling;
+            statusElement.textContent = 'Watering in progress...';
+            
+            // Simulate irrigation completion after 3 seconds
+            setTimeout(() => {
+              button.classList.remove('active');
+              button.classList.add('disabled');
+              button.textContent = 'Irrigation Complete';
+              statusElement.textContent = 'Last watered: Just now';
+              
+              // Reset after 10 seconds
+              setTimeout(() => {
+                button.classList.remove('disabled');
+                button.textContent = 'Activate Irrigation';
+              }, 10000);
+            }, 3000);
+          });
+        }
+      });
+      
+      // Setup map control buttons
+      const mapControlButtons = document.querySelectorAll('.map-control-btn');
+      mapControlButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          mapControlButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // Initialize map
+      initializeMap();
+      
+      // Initialize weather data
+      fetchWeatherData();
+    });
+    
+    // Function to initialize the map
+    function initializeMap() {
+      try {
+        // Initialize the Leaflet map
+        const map = L.map('plant-map').setView([27.9120, 78.0775], 15);
+        
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add markers for each plant with health status colors
+        plantModels.forEach(plant => {
+          if (plant.location) {
+            // Determine marker color based on health
+            let markerColor;
+            switch(plant.health) {
+              case 'excellent': markerColor = '#4CAF50'; break;
+              case 'good': markerColor = '#8BC34A'; break;
+              case 'fair': markerColor = '#FFC107'; break;
+              case 'concern': markerColor = '#FF9800'; break;
+              case 'critical': markerColor = '#F44336'; break;
+              default: markerColor = '#2196F3';
+            }
+            
+            // Create custom icon with health color
+            const plantIcon = L.divIcon({
+              className: 'plant-marker',
+              html: <div style="background-color: ${markerColor}; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white;"></div>,
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
+            });
+            
+            // Create marker with custom icon
+            const marker = L.marker(plant.location, {icon: plantIcon}).addTo(map);
+            
+            // Create popup with health info
+            const healthStatus = plant.health.charAt(0).toUpperCase() + plant.health.slice(1);
+            const popupContent = `
+              <div style="font-family: 'Segoe UI', sans-serif; text-align: center;">
+                <b>${plant.name}</b><br>
+                <i>${plant.scientific}</i><br>
+                <span style="color: ${markerColor}; font-weight: bold;">Health: ${healthStatus}</span><br>
+                Soil Moisture: ${plant.moisture}%<br>
+                <a href="#${plant.id}" style="color: blue; text-decoration: underline;">View details</a>
+              </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+          }
+        });
+        
+        // Define a polygon to show the AMU campus area
+        const campusPolygon = L.polygon([
+          [27.9140, 78.0790],
+          [27.9140, 78.0760],
+          [27.9100, 78.0760],
+          [27.9100, 78.0790]
+        ], {
+          color: 'green',
+          fillColor: '#4CAF50',
+          fillOpacity: 0.2
+        }).addTo(map);
+        
+        campusPolygon.bindPopup("AMU Campus - Smart Plant Monitoring Active");
+      } catch (error) {
+        console.error("Map initialization error:", error);
+        document.getElementById('plant-map').innerHTML = '<div style="text-align: center; padding: 20px;">Map loading error. Please try refreshing the page.</div>';
+      }
+    }
+    
+    // Function to fetch weather data (simulated)
+    function fetchWeatherData() {
+      const weatherContainer = document.getElementById('weather-container');
+      weatherContainer.innerHTML = '';
+      
+      // Simulated weather data
+      const weatherData = [
+        { day: 'Today', icon: '☀', temp: 32, desc: 'Sunny', humidity: 45 },
+        { day: 'Tomorrow', icon: '⛅', temp: 30, desc: 'Partly Cloudy', humidity: 50 },
+        { day: 'Wed', icon: '🌧', temp: 28, desc: 'Light Rain', humidity: 65 },
+        { day: 'Thu', icon: '🌧', temp: 27, desc: 'Moderate Rain', humidity: 72 },
+        { day: 'Fri', icon: '⛅', temp: 29, desc: 'Partly Cloudy', humidity: 58 }
+      ];
+      
+      // Create weather cards
+      weatherData.forEach(day => {
+        const weatherCard = document.createElement('div');
+        weatherCard.className = 'weather-card';
+        weatherCard.innerHTML = `
+          <div>${day.day}</div>
+          <div>${day.icon}</div>
+          <div>${day.temp}°C</div>
+          <div>${day.desc}</div>
+          <div>Humidity: ${day.humidity}%</div>
+        `;
+        weatherContainer.appendChild(weatherCard);
+      });
+      
+      // Add impact analysis
+      analyzeWeatherImpact(weatherData);
+    }
+    
+    // Enable plant sensor alerts
+    document.addEventListener('DOMContentLoaded', function() {
+      // After a few seconds, show a simulated alert for the Australian Pine
+      setTimeout(() => {
+        // Create alert notification
+        const alertDiv = document.createElement('div');
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.bottom = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.backgroundColor = '#F44336';
+        alertDiv.style.color = 'white';
+        alertDiv.style.padding = '15px 20px';
+        alertDiv.style.borderRadius = '10px';
+        alertDiv.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.display = 'flex';
+        alertDiv.style.alignItems = 'center';
+        alertDiv.style.gap = '10px';
+        alertDiv.style.animation = 'slideIn 0.5s ease-out';
+        
+        alertDiv.innerHTML = `
+          <div style="font-size: 2rem;">⚠</div>
+          <div>
+            <strong>CRITICAL ALERT</strong><br>
+            Australian Pine moisture level critical (18%)<br>
+            <a href="#australian-pine" style="color: white; text-decoration: underline;">View details</a>
+          </div>
+          <button style="margin-left: 10px; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+        `;
+        
+        // Add dismiss functionality
+        alertDiv.querySelector('button').addEventListener('click', function() {
+          alertDiv.style.animation = 'slideOut 0.5s ease-out';
+          setTimeout(() => {
+            alertDiv.remove();
+          }, 500);
+        });
+        
+        // Add the alert to the body
+        document.body.appendChild(alertDiv);
+        
+        // Add alert animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
+        
+        // Auto-dismiss after 10 seconds
+        setTimeout(() => {
+          if (document.body.contains(alertDiv)) {
+            alertDiv.style.animation = 'slideOut 0.5s ease-out';
+            setTimeout(() => {
+              alertDiv.remove();
+            }, 500);
+          }
+        }, 10000);
+      }, 15000); // Show alert after 15 seconds
+    });
+  </script>
+</body>
+</html>
